@@ -179,7 +179,10 @@ async function doLogin() {
   setLoading(true);
   // Demo: try backend, fall back to mock
   try {
-    const res = await fetch('http://localhost:8080/api/auth/login', {
+    const authUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? 'http://localhost:8080/api/auth/login'
+      : 'https://YOUR_BACKEND_NAME.onrender.com/api/auth/login';
+    const res = await fetch(authUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass }),
