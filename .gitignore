@@ -1,0 +1,23 @@
+# Environment files
+.env
+.env.*
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+logs.txt
+
+# Java / Maven
+myapp/target/
+*.class
+
+# Node / JS (If any added later)
+node_modules/
+
+# OS specific
+.DS_Store
+Thumbs.db

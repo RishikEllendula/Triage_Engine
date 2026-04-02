@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Triage Dashboard</title>
+  <script>
+    (function(){
+      if (!localStorage.getItem('triage_user')) {
+        window.location.href = 'login.html';
+      }
+    })();
+  </script>
+  <meta name="description" content="Real-time emergency patient triage management. Submit, track, and prioritize patient cases with AI-powered scoring." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ambient background blobs -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Emergency Triage</span>
+        <span class="brand-sub">Priority Engine</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+        <span class="nav-indicator"></span>
+      </a>
+      <a href="#" class="nav-item" data-page="submit" id="nav-submit">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14"/>
+          </svg>
+        </span>
+        <span class="nav-label">Submit Case</span>
+        <span class="nav-indicator"></span>
+      </a>
+      <a href="#" class="nav-item" data-page="cases" id="nav-cases">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="M9 12h6M9 16h4"/>
+          </svg>
+        </span>
+        <span class="nav-label">All Cases</span>
+        <span class="nav-badge" id="cases-badge">0</span>
+        <span class="nav-indicator"></span>
+      </a>
+      <a href="#" class="nav-item" data-page="urgent" id="nav-urgent">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </span>
+        <span class="nav-label">Urgent Cases</span>
+        <span class="nav-badge urgent-badge" id="urgent-badge">0</span>
+        <span class="nav-indicator"></span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip" id="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div>
+          <div class="user-name" id="user-name">Loading...</div>
+          <div class="user-role" id="user-role"></div>
+        </div>
+      </div>
+      <button class="btn-logout" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+      <div class="connection-status" id="connection-status">
+        <span class="status-dot pulse-green"></span>
+        <span class="status-text">API Connected</span>
+      </div>
+      <div class="sidebar-time" id="sidebar-time"></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="page-breadcrumb" id="page-breadcrumb">
+          <span class="breadcrumb-home">Emergency Triage Dashboard</span>
+          <span class="blink" style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;margin-left:6px"></span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbar-date" style="font-family:monospace;font-size:12px"></span>
+        <button class="btn-refresh" id="btn-refresh" title="Refresh data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+            <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/>
+          </svg>
+        </button>
+        <!-- Notification bell -->
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;position:relative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span style="position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:2px solid var(--bg)"></span>
+        </div>
+        <!-- User chip -->
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="user-avatar" id="topbar-avatar" style="width:32px;height:32px;font-size:11px;font-weight:700">DR</div>
+          <div style="font-size:12px">
+            <div id="topbar-username" style="font-weight:600;color:var(--text)">Dr. Rivera</div>
+            <div id="topbar-role" style="color:var(--text3);font-size:10px">Emergency Physician</div>
+          </div>
+        </div>
+        <!-- Logout -->
+        <button class="btn-logout" id="btn-logout-top" style="width:auto;padding:7px 14px;border-radius:9px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Pages -->
+    <div class="pages-container" id="pages-container">
+
+      <!-- DASHBOARD PAGE -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Emergency Dashboard</h1>
+            <p class="page-subtitle">Real-time triage overview and situational awareness</p>
+          </div>
+          <button class="btn-primary" onclick="navigateTo('submit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <path d="M12 5v14m-7-7h14"/>
+            </svg>
+            New Case
+          </button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card stat-total" id="stat-total">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-total-val">—</div>
+              <div class="stat-label">Total Cases</div>
+            </div>
+            <div class="stat-trend">
+              <span class="trend-label">All time</span>
+            </div>
+          </div>
+          <div class="stat-card stat-critical" id="stat-critical">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-critical-val">—</div>
+              <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-bar"><div class="stat-fill fill-critical" id="fill-critical"></div></div>
+          </div>
+          <div class="stat-card stat-high" id="stat-high">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-high-val">—</div>
+              <div class="stat-label">High Priority</div>
+            </div>
+            <div class="stat-bar"><div class="stat-fill fill-high" id="fill-high"></div></div>
+          </div>
+          <div class="stat-card stat-medium" id="stat-medium">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-medium-val">—</div>
+              <div class="stat-label">Medium Priority</div>
+            </div>
+            <div class="stat-bar"><div class="stat-fill fill-medium" id="fill-medium"></div></div>
+          </div>
+          <div class="stat-card stat-low" id="stat-low">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-low-val">—</div>
+              <div class="stat-label">Low Priority</div>
+            </div>
+            <div class="stat-bar"><div class="stat-fill fill-low" id="fill-low"></div></div>
+          </div>
+        </div>
+
+        <!-- Priority Distribution -->
+        <div class="dashboard-row">
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>Priority Distribution</h3>
+              <span class="card-badge">Live</span>
+            </div>
+            <div class="distribution-chart" id="distribution-chart">
+              <div class="dist-bar-wrap">
+                <span class="dist-label critical">CRITICAL</span>
+                <div class="dist-track"><div class="dist-fill dcritical" id="dist-critical"></div></div>
+                <span class="dist-count" id="dist-critical-count">0</span>
+              </div>
+              <div class="dist-bar-wrap">
+                <span class="dist-label high">HIGH</span>
+                <div class="dist-track"><div class="dist-fill dhigh" id="dist-high"></div></div>
+                <span class="dist-count" id="dist-high-count">0</span>
+              </div>
+              <div class="dist-bar-wrap">
+                <span class="dist-label medium">MEDIUM</span>
+                <div class="dist-track"><div class="dist-fill dmedium" id="dist-medium"></div></div>
+                <span class="dist-count" id="dist-medium-count">0</span>
+              </div>
+              <div class="dist-bar-wrap">
+                <span class="dist-label low">LOW</span>
+                <div class="dist-track"><div class="dist-fill dlow" id="dist-low"></div></div>
+                <span class="dist-count" id="dist-low-count">0</span>
+              </div>
+            </div>
+            <div class="empty-chart-msg" id="empty-chart-msg" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              <p>No data yet — submit a case to begin</p>
+            </div>
+          </div>
+
+          <div class="card quick-actions-card">
+            <div class="card-header">
+              <h3>Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+              <button class="qa-btn qa-submit" onclick="navigateTo('submit')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                <div>
+                  <div class="qa-title">Submit New Case</div>
+                  <div class="qa-sub">Register a patient for triage</div>
+                </div>
+              </button>
+              <button class="qa-btn qa-critical" onclick="filterAndNavigate('CRITICAL')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <div>
+                  <div class="qa-title">View Critical Cases</div>
+                  <div class="qa-sub">Immediate intervention required</div>
+                </div>
+              </button>
+              <button class="qa-btn qa-urgent" onclick="navigateTo('urgent')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                  <div class="qa-title">View Urgent Queue</div>
+                  <div class="qa-sub">Critical + High priority</div>
+                </div>
+              </button>
+              <button class="qa-btn qa-all" onclick="navigateTo('cases')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+                <div>
+                  <div class="qa-title">All Cases</div>
+                  <div class="qa-sub">Full patient case list</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Cases -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Cases</h3>
+            <button class="btn-outline-sm" onclick="navigateTo('cases')">View All</button>
+          </div>
+          <div id="recent-cases-list" class="cases-list compact"></div>
+          <div class="empty-state" id="empty-recent" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+            <h4>No cases yet</h4>
+            <p>Submit the first patient case to get started</p>
+            <button class="btn-primary" onclick="navigateTo('submit')">Submit Case</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUBMIT CASE PAGE -->
+      <section class="page" id="page-submit">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Submit Patient Case</h1>
+            <p class="page-subtitle">Enter patient vitals, symptoms, and complaint for triage assessment</p>
+          </div>
+        </div>
+
+        <div class="form-layout">
+          <form id="triage-form" class="triage-form" novalidate>
+
+            <!-- Patient Demographics -->
+            <div class="form-card">
+              <div class="form-section-header">
+                <div class="section-icon icon-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <h3>Patient Demographics</h3>
+                  <p>Basic identification and patient information</p>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group span-2">
+                  <label for="f-name">Full Name <span class="required">*</span></label>
+                  <input type="text" id="f-name" name="name" placeholder="e.g. John Doe" minlength="2" maxlength="100" required />
+                  <span class="field-hint">2–100 characters</span>
+                  <span class="field-error" id="err-name"></span>
+                </div>
+                <div class="form-group">
+                  <label for="f-age">Age <span class="required">*</span></label>
+                  <input type="number" id="f-age" name="age" placeholder="e.g. 45" min="0" max="130" required />
+                  <span class="field-hint">0–130 years</span>
+                  <span class="field-error" id="err-age"></span>
+                </div>
+                <div class="form-group">
+                  <label for="f-gender">Gender <span class="required">*</span></label>
+                  <select id="f-gender" name="gender" required>
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <span class="field-error" id="err-gender"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vital Signs -->
+            <div class="form-card">
+              <div class="form-section-header">
+                <div class="section-icon icon-red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <div>
+                  <h3>Vital Signs</h3>
+                  <p>Current physiological measurements</p>
+                </div>
+              </div>
+              <div class="form-grid vitals-grid">
+                <div class="form-group vital-group">
+                  <label for="f-heartrate">Heart Rate <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-heartrate" name="heartRate" placeholder="e.g. 78" min="20" max="300" required />
+                    <span class="unit-badge">bpm</span>
+                  </div>
+                  <span class="field-hint">20–300 bpm</span>
+                  <span class="field-error" id="err-heartrate"></span>
+                  <div class="vital-indicator" id="vi-heartrate"></div>
+                </div>
+                <div class="form-group vital-group">
+                  <label for="f-systolicbp">Systolic BP <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-systolicbp" name="systolicBP" placeholder="e.g. 120" min="50" max="250" required />
+                    <span class="unit-badge">mmHg</span>
+                  </div>
+                  <span class="field-hint">50–250 mmHg</span>
+                  <span class="field-error" id="err-systolicbp"></span>
+                  <div class="vital-indicator" id="vi-systolicbp"></div>
+                </div>
+                <div class="form-group vital-group">
+                  <label for="f-diastolicbp">Diastolic BP <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-diastolicbp" name="diastolicBP" placeholder="e.g. 80" min="30" max="150" required />
+                    <span class="unit-badge">mmHg</span>
+                  </div>
+                  <span class="field-hint">30–150 mmHg</span>
+                  <span class="field-error" id="err-diastolicbp"></span>
+                  <div class="vital-indicator" id="vi-diastolicbp"></div>
+                </div>
+                <div class="form-group vital-group">
+                  <label for="f-temperature">Temperature <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-temperature" name="temperature" placeholder="e.g. 37.5" min="30" max="45" step="0.1" required />
+                    <span class="unit-badge">°C</span>
+                  </div>
+                  <span class="field-hint">30.0–45.0 °C</span>
+                  <span class="field-error" id="err-temperature"></span>
+                  <div class="vital-indicator" id="vi-temperature"></div>
+                </div>
+                <div class="form-group vital-group">
+                  <label for="f-resprate">Respiratory Rate <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-resprate" name="respiratoryRate" placeholder="e.g. 16" min="4" max="60" required />
+                    <span class="unit-badge">br/min</span>
+                  </div>
+                  <span class="field-hint">4–60 breaths/min</span>
+                  <span class="field-error" id="err-resprate"></span>
+                  <div class="vital-indicator" id="vi-resprate"></div>
+                </div>
+                <div class="form-group vital-group">
+                  <label for="f-spo2">O₂ Saturation <span class="required">*</span></label>
+                  <div class="input-unit-wrap">
+                    <input type="number" id="f-spo2" name="oxygenSaturation" placeholder="e.g. 98" min="60" max="100" required />
+                    <span class="unit-badge">%</span>
+                  </div>
+                  <span class="field-hint">60–100 %</span>
+                  <span class="field-error" id="err-spo2"></span>
+                  <div class="vital-indicator" id="vi-spo2"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Symptoms & Complaint -->
+            <div class="form-card">
+              <div class="form-section-header">
+                <div class="section-icon icon-orange">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+                </div>
+                <div>
+                  <h3>Symptoms & Complaint</h3>
+                  <p>Reported symptoms and chief medical complaint</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Symptoms <span class="required">*</span></label>
+                <div class="symptom-input-row">
+                  <input type="text" id="symptom-input" placeholder="Type a symptom and press Enter or +" />
+                  <button type="button" class="btn-add-symptom" id="btn-add-symptom">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14m-7-7h14"/></svg>
+                  </button>
+                </div>
+                <div class="symptom-suggestions" id="symptom-suggestions"></div>
+                <div class="symptom-tags" id="symptom-tags"></div>
+                <span class="field-error" id="err-symptoms"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="f-complaint">Chief Complaint <span class="required">*</span></label>
+                <textarea id="f-complaint" name="chiefComplaint" rows="3" placeholder="Describe the primary reason for the emergency visit..." maxlength="500" required></textarea>
+                <div class="char-count"><span id="complaint-chars">0</span>/500</div>
+                <span class="field-error" id="err-complaint"></span>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" onclick="resetForm()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 12a9 9 0 109-9M3 3v6h6"/></svg>
+                Reset Form
+              </button>
+              <button type="submit" class="btn-primary btn-submit" id="btn-submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Submit for Triage
+              </button>
+            </div>
+          </form>
+
+          <!-- Live Score Preview -->
+          <div class="score-preview-panel" id="score-preview-panel">
+            <div class="score-preview-card">
+              <h4>Triage Assessment Preview</h4>
+              <div class="score-circles">
+                <div class="score-ring-wrap">
+                  <svg class="score-ring" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" class="ring-bg"/>
+                    <circle cx="50" cy="50" r="40" class="ring-fg" id="ring-fg" stroke-dasharray="0 251"/>
+                  </svg>
+                  <div class="ring-label">
+                    <span class="ring-score" id="ring-score">?</span>
+                    <span class="ring-sub">Score</span>
+                  </div>
+                </div>
+              </div>
+              <div class="preview-priority" id="preview-priority">
+                <span class="priority-label">—</span>
+              </div>
+              <div class="preview-tips" id="preview-tips">
+                <p>Fill in patient data to see a live triage estimate</p>
+              </div>
+            </div>
+
+            <div class="symptom-quick-pick">
+              <h5>Quick Symptoms</h5>
+              <div class="quick-symptom-btns" id="quick-symptom-btns"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALL CASES PAGE -->
+      <section class="page" id="page-cases">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">All Triage Cases</h1>
+            <p class="page-subtitle">Complete case list sorted by urgency and submission time</p>
+          </div>
+          <button class="btn-primary" onclick="navigateTo('submit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M12 5v14m-7-7h14"/></svg>
+            New Case
+          </button>
+        </div>
+
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="filter-tab active" data-filter="ALL">All</button>
+          <button class="filter-tab critical-tab" data-filter="CRITICAL">Critical</button>
+          <button class="filter-tab high-tab" data-filter="HIGH">High</button>
+          <button class="filter-tab medium-tab" data-filter="MEDIUM">Medium</button>
+          <button class="filter-tab low-tab" data-filter="LOW">Low</button>
+        </div>
+
+        <div class="search-row">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="cases-search" placeholder="Search by name, complaint, symptoms..." />
+          </div>
+          <div class="sort-wrap">
+            <select id="cases-sort">
+              <option value="score-desc">Highest Score</option>
+              <option value="score-asc">Lowest Score</option>
+              <option value="time-desc">Newest First</option>
+              <option value="time-asc">Oldest First</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="cases-list" class="cases-list"></div>
+        <div class="empty-state" id="empty-cases" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          <h4>No cases found</h4>
+          <p>Try a different filter or submit a new case</p>
+        </div>
+        <div class="loading-spinner" id="cases-loading" style="display:none">
+          <div class="spinner"></div>
+          <span>Loading cases...</span>
+        </div>
+      </section>
+
+      <!-- URGENT CASES PAGE -->
+      <section class="page" id="page-urgent">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title urgent-title">
+              <span class="pulse-dot"></span>
+              Urgent Cases Queue
+            </h1>
+            <p class="page-subtitle">Critical and high-priority patients requiring immediate or urgent attention</p>
+          </div>
+        </div>
+
+        <div class="urgent-alert-banner" id="urgent-alert-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="urgent-count-text">Loading urgent cases...</span>
+        </div>
+
+        <div id="urgent-list" class="cases-list"></div>
+        <div class="empty-state success-empty" id="empty-urgent" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56" style="color: var(--low-color)"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <h4 style="color: var(--low-color)">All Clear!</h4>
+          <p>No critical or high-priority cases at this time</p>
+        </div>
+        <div class="loading-spinner" id="urgent-loading" style="display:none">
+          <div class="spinner"></div>
+          <span>Loading urgent cases...</span>
+        </div>
+      </section>
+
+    </div><!-- end pages-container -->
+  </main>
+
+  <!-- Case Detail Modal -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-patient-name">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="modal-inner" id="modal-inner"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Result Overlay (after submission) -->
+  <div class="result-overlay" id="result-overlay">
+    <div class="result-card" id="result-card">
+      <button class="result-close" id="result-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="result-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

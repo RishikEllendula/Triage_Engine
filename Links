@@ -1,0 +1,11 @@
+Main link - http://localhost:8080/swagger-ui/index.html#/Triage/submitCase
+
+http://localhost:8080/api/v1/triage/dashboard
+
+http://localhost:8080/api/v1/triage/cases
+
+http://localhost:8080/api/v1/triage/cases/priority/CRITICAL
+
+http://localhost:8080/api/v1/triage/cases/urgent
+
+http://localhost:8080/api/v1/triage/cases

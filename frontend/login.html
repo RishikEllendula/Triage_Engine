@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Triage — Clinical Access Portal</title>
+  <meta name="description" content="Secure login for Emergency Triage Priority Engine clinical staff." />
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    // Already logged in? Go to dashboard
+    (function(){
+      if (localStorage.getItem('triage_user')) window.location.href = 'index.html';
+    })();
+  </script>
+</head>
+<body>
+<div class="login-page" id="login-page">
+  <canvas id="login-canvas" class="login-canvas"></canvas>
+  <div class="login-bg-grid"></div>
+  <div class="login-orb-1"></div>
+  <div class="login-orb-2"></div>
+
+  <div class="login-box fade-up">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <h1 class="login-title">Emergency Triage</h1>
+      <p class="login-subtitle">Priority Engine — Clinical Access Portal</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="login-form-card">
+
+      <!-- Error message -->
+      <div class="login-error" id="login-error" style="display:none"></div>
+
+      <!-- Staff Email -->
+      <label class="login-label" for="email">Staff Email</label>
+      <div class="login-input-wrap" style="margin-bottom:18px">
+        <span class="login-input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </span>
+        <input
+          type="email" id="email" placeholder="staff@hospital.org"
+          class="login-input"
+          autocomplete="email"
+        />
+      </div>
+
+      <!-- Password -->
+      <label class="login-label" for="password">Password</label>
+      <div class="login-input-wrap" style="margin-bottom:24px; position:relative">
+        <span class="login-input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </span>
+        <input
+          type="password" id="password" placeholder="••••••••"
+          class="login-input-pass"
+          autocomplete="current-password"
+        />
+        <button class="login-password-icon" id="toggle-pass" type="button" title="Toggle password">
+          <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Submit -->
+      <button class="btn-login" id="btn-login" type="button">
+        Access Dashboard
+      </button>
+
+      <p class="login-note">Authorized clinical personnel only · Any credentials accepted in demo</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── Particle canvas ────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('login-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  const particles = Array.from({ length: 50 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    r: Math.random() * 1.8 + 0.4,
+    o: Math.random() * 0.35 + 0.08,
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(99,179,237,${p.o})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Toggle password ────────────────────────────────────────────────────
+const passInput = document.getElementById('password');
+const eyeIcon = document.getElementById('eye-icon');
+document.getElementById('toggle-pass').addEventListener('click', () => {
+  const show = passInput.type === 'password';
+  passInput.type = show ? 'text' : 'password';
+  eyeIcon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+});
+
+// ── Toast ──────────────────────────────────────────────────────────────
+function showToast(type, msg) {
+  const cont = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type} slide-in`;
+  t.innerHTML = `
+    <span class="toast-icon">
+      ${type === 'error'
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 16 4 11"/></svg>'}
+    </span>
+    <span class="toast-msg">${msg}</span>`;
+  cont.appendChild(t);
+  t.addEventListener('click', () => t.remove());
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ── Login logic ────────────────────────────────────────────────────────
+const btn = document.getElementById('btn-login');
+const emailEl = document.getElementById('email');
+const errEl = document.getElementById('login-error');
+
+function setLoading(on) {
+  if (on) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <span class="spin" style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;display:inline-block"></span>
+      Authenticating...`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Access Dashboard';
+  }
+}
+
+async function doLogin() {
+  const email = emailEl.value.trim();
+  const pass  = passInput.value;
+  errEl.style.display = 'none';
+  if (!email || !pass) {
+    errEl.textContent = 'Please enter your credentials';
+    errEl.style.display = 'block'; return;
+  }
+  setLoading(true);
+  // Demo: try backend, fall back to mock
+  try {
+    const res = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) throw new Error('Invalid credentials');
+    const data = await res.json();
+    localStorage.setItem('triage_user', JSON.stringify({
+      email,
+      name: data.name || data.username || 'Dr. Rivera',
+      role: data.role || 'Emergency Physician',
+      token: data.token || '',
+    }));
+  } catch {
+    // Demo fallback — enforce admin@123 as requested
+    await new Promise(r => setTimeout(r, 1200));
+    if (pass !== 'admin@123') {
+      errEl.textContent = 'Invalid credentials. Hint: use admin@123';
+      errEl.style.display = 'block';
+      setLoading(false);
+      return;
+    }
+    localStorage.setItem('triage_user', JSON.stringify({
+      email,
+      name: email.split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
+      role: 'Emergency Physician',
+      token: 'demo',
+    }));
+  }
+  setLoading(false);
+  showToast('success', 'Access granted — redirecting to dashboard');
+  setTimeout(() => { window.location.href = 'index.html'; }, 700);
+}
+
+btn.addEventListener('click', doLogin);
+[emailEl, passInput].forEach(el => el.addEventListener('keydown', e => e.key === 'Enter' && doLogin()));
+</script>
+</body>
+</html>
