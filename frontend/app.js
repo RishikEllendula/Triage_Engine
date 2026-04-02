@@ -3,7 +3,7 @@
 // Change YOUR_BACKEND_NAME when deploying to Render!
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
     ? 'http://localhost:8080/api/v1/triage' 
-    : 'https://YOUR_BACKEND_NAME.onrender.com/api/v1/triage';
+    : 'https://triage-engine-ub5p.onrender.com/api/v1/triage';
 
 /* ===========================
    STATE
