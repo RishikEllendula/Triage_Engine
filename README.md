@@ -31,4 +31,4 @@ docker compose up -d --build
 -   **Backend API Base URL:** http://localhost:8080/api/v1/triage
 
 ## Troubleshooting
-If you encounter `500 Internal Server Errors` on login, the frontend is successfully triggering its demo-login fallback (`admin@123`). Ensure you do not change the `SecurityConfig.java` to block API requests if the API paths don't officially exist yet!
+If you encounter `500 Internal Server Errors` on login, the frontend is successfully triggering its demo-login fallback (`admin@123`). Ensure you do not change the `SecurityConfig.java` to block API requests, if the API paths don't officially exist yet!
